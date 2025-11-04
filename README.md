@@ -1,84 +1,164 @@
 # Engineering Fast Li Transport in Solid-State Electrolytes
 
-This repository hosts code, data, and analysis for studying fast lithium-ion transport in solid-state electrolytes. The index below explains the purpose of each top-level folder and how to get started.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+Code, data, and analysis for studying fast lithium-ion transport in solid-state electrolytes. This README explains the repository layout and how to get started.
+
+---
+
+## Table of Contents
+
+* [Repository Layout](#repository-layout)
+* [1_HT-DFT_parameter](#1_ht-dft_parameter)
+* [2_Datasets](#2_datasets)
+* [3_CGCNN](#3_cgcnn)
+* [4_XGBoost](#4_xgboost)
+* [5_SISSO](#5_sisso)
+* [6_Explainability](#6_explainability)
+* [Quick Start](#quick-start)
+* [Reproducibility Checklist](#reproducibility-checklist)
+* [Data & Large Files](#data--large-files)
+* [Citations](#citations)
+* [License](#license)
+* [How to Cite This Repository](#how-to-cite-this-repository)
+
+---
 
 ## Repository Layout
-- [1_DFT_parameter/](#1_dft_parameter) — High-throughput DFT calculation parameters and templates  
-- [2_Datasets/](#2_datasets) — Datasets of examples and accompanying documentation  
-- [3_CGCNN/](#3_cgcnn) — Crystal Graph Convolutional Network (CGCNN) training and inference  
-- [4_XGBoost/](#4_xgboost) — Feature engineering and XGBoost baselines  
-- [5_SISSO/](#5_sisso) — SISSO descriptor search and selection  
-- [6_Explainability/](#6_explainability) — Model explainability and diagnostics  
+
+* [**1_HT-DFT_parameter/**](#1_ht-dft_parameter) — High-throughput DFT workflows (VASP 5.4.4): data collection, surface models, frozen atoms, Li/S single-atom placement, LiTFSI placement, and run parameters.
+* [**2_Datasets/**](#2_datasets) — De-duplicated, cleaned datasets; categorized by band gap.
+* [**3_CGCNN/**](#3_cgcnn) — Crystal Graph Convolutional Network (CGCNN) training and inference.
+* [**4_XGBoost/**](#4_xgboost) — Feature engineering and XGBoost baselines.
+* [**5_SISSO/**](#5_sisso) — Parameters and inputs for descriptor discovery (SISSO).
+* [**6_Explainability/**](#6_explainability) — Descriptor/model explainability (e.g., SHAP).
 
 ---
 
-### 1_DFT_parameter
-Inputs and scripts for first-principles (DFT) calculations.  
-**Notes**
-- All DFT calculations in this project were performed using **VASP 5.4.4**. Please ensure you (or your HPC center) hold a valid VASP license before running or modifying any workflows.  
-- Typical contents:
-  - `inputs/` parameter templates (e.g., INCAR/INP, KPOINTS, POTCAR guidance)
-  - `examples/` benchmark systems and recommended settings
-  - `scripts/` submission helpers and parsers
-- Recommended citations for VASP methodology (add to your papers/slides):  
-  - Kresse & Furthmüller, *Phys. Rev. B* **54**, 11169 (1996), doi: **10.1103/PhysRevB.54.11169**  
-  - Kresse & Joubert, *Phys. Rev. B* **59**, 1758 (1999), doi: **10.1103/PhysRevB.59.1758**  
+## 1_HT-DFT_parameter
+
+All first-principles calculations in this project were performed with **VASP 5.4.4** (use under a valid VASP license).
+
+**Contents & workflow (1 → 6):**
+
+1. `1_Data_collection.ipynb` — Collect crystal structures and metadata for target systems.
+2. `2_Surfaces_building.ipynb` — Build surface/interface models (slabs, supercells, terminations).
+3. `3_Fix_atoms.ipynb` — Define frozen layers/atoms (e.g., bottom slab layers).
+4. `4_Surface+Li_or_S_building.ipynb` — Place single **Li** or **S** atoms at candidate adsorption sites.
+5. `5_Surface+LiTFSI_building.ipynb` — Place **LiTFSI** molecular groups on surfaces/interfaces.
+6. `6_DFT_calculations_parameters.py` — High-throughput VASP runtime settings (INCAR/KPOINTS/POTCAR choices, queue submission helpers).
+
+> **Notes**
+>
+> * This repo does **not** distribute VASP binaries or POTCARs. Use your institution’s licensed VASP installation and update submission scripts accordingly.
+> * Keep per-system settings (ENCUT, k-mesh, smearing, dipole correction, U/functional) version-controlled with summary tables for reproducibility.
+> * Recommended methodology citations are listed in [Citations](#citations).
 
 ---
 
-### 2_Datasets
-Datasets and data preparation artifacts.
-- Suggested structure:
-  - `raw/` original structures/labels/metadata
-  - `processed/` cleaned/featurized data (ready for modeling)
-  - `splits/` train/val/test (or CV) indices
-  - `metadata.md` field dictionary, provenance, and licensing
-- **Large files**: please use Git LFS for versioning and/or GitHub Releases for distributing artifacts.
+## 2_Datasets
+
+De-duplicated and cleaned datasets used across models. Data are **categorized by band gap**, with JSON files corresponding to energy ranges:
+
+* `binary_tm_compounds_0eV.json` — 0 eV (metallic)
+* `binary_tm_compounds_0.1-1.5eV.json` — 0.1–1.5 eV
+* `binary_tm_compounds_1.5-3eV.json` — 1.5–3 eV
+* `binary_tm_compounds_3-6eV.json` — 3–6 eV
+* `binary_tm_compounds_6-10eV.json` — 6–10 eV
+
+**Suggested structure**
+
+```
+2_Datasets/
+├─ raw/            # (optional) original structures/labels
+├─ processed/      # featurized or normalized data
+├─ splits/         # train/val/test indices or CV folds
+└─ metadata.md     # dataset schema, provenance, and licensing
+```
+
+> **Large files**: Track big artifacts with **Git LFS** (GitHub blocks pushing files ≥ **100 MB**). For public distribution, publish versioned artifacts via **GitHub Releases**.
 
 ---
 
-### 3_CGCNN
-Training/inference code and configs for **CGCNN** (Crystal Graph Convolutional Neural Networks).
-- Paper to cite: Xie & Grossman, *Phys. Rev. Lett.* **120**, 145301 (2018), doi: **10.1103/PhysRevLett.120.145301**.  
-- Environment: install dependencies per the upstream CGCNN instructions (PyTorch + Python toolchain).  
-- Typical contents:
-  - `train.py`, `predict.py` entry points
-  - `configs/` hyperparameters and experiment settings
-  - `data/` graph conversion utilities or cached graphs
-  - `checkpoints/` trained weights and logs
+## 3_CGCNN
+
+Code for training and evaluating **Crystal Graph Convolutional Neural Networks**.
+
+**Files**
+
+* `main_regress_basic.py` — Basic regression training pipeline.
+* `main_regress_k_fold.py` — K-fold cross-validation training/evaluation.
+
+**Run (example)**
+
+```bash
+# after environment setup
+python 3_CGCNN/main_regress_basic.py
+# or
+python 3_CGCNN/main_regress_k_fold.py
+```
+
+Please cite: Xie & Grossman, Physical Review Letters 120, 145301 (2018).
 
 ---
 
-### 4_XGBoost
-Feature-based baselines using **XGBoost**.
-- Paper to cite: Chen & Guestrin, KDD’16, doi: **10.1145/2939672.2939785**.  
-- Environment: install the `xgboost` package (via `pip` or `conda`) and the usual Python stack for data handling/plots.
-- Suggested structure:
-  - `features/` feature generation scripts
-  - `train.py` training with CV/early stopping
-  - `eval/` metrics, plots, and ablations
+## 4_XGBoost
+
+Feature-based baselines implemented with **XGBoost**.
+
+**Files**
+
+* `xgboost.py` — Training/evaluation script (configure feature and data paths inside).
+
+**Run (example)**
+
+```bash
+python 4_XGBoost/xgboost.py
+```
+
+Please cite: Chen & Guestrin, KDD (2016), “XGBoost: A Scalable Tree Boosting System.”
 
 ---
 
-### 5_SISSO
-Sparse descriptor discovery with **SISSO**.
-- Paper to cite: Ouyang *et al.*, *Phys. Rev. Materials* **2**, 083802 (2018), doi: **10.1103/PhysRevMaterials.2.083802**.  
-- Environment: build the original Fortran SISSO or **SISSO++** (C++ with Python bindings); see the referenced installation guides.
-- Typical contents:
-  - `prep/` feature space definitions and operators
-  - `run/` configs and execution scripts
-  - `descriptors/` candidate and final descriptors
+## 5_SISSO
+
+Inputs and parameterization for SISSO descriptor discovery.
+
+**Files**
+
+* `SISSO.in` — Operator set, rung/depth, sparsity, target, and constraints for descriptor search.
+
+**Execute**
+
+```bash
+# Use your SISSO/SISSO++ binary; see upstream installation guides.
+/path/to/SISSO
+```
+
+Please cite: Ouyang et al., Physical Review Materials 2, 083802 (2018).
 
 ---
 
-### 6_Explainability
-Model interpretability and diagnostics across methods.
-- Common tooling: SHAP (SHapley Additive exPlanations) for global/local importance.  
-  - Reference: Lundberg & Lee, NeurIPS 2017 (SHAP).  
-- Suggested structure:
-  - `shap/` SHAP value computation and plots
-  - `feature_importance/` aggregated importances across models
-  - `case_studies/` qualitative analyses and error forensics
+## 6_Explainability
+
+Explainability and diagnostics for descriptors/models (e.g., **SHAP**).
+
+**Files**
+
+* `SHAP_cgcnn.ipynb` — SHAP analysis for CGCNN predictions (global/local effects).
+* `SHAP_xgboost.py` — SHAP pipeline for XGBoost features.
+
+**Run (example)**
+
+```bash
+# Notebook
+jupyter lab  # then open 6_Explainability/SHAP_cgcnn.ipynb
+
+# Script
+python 6_Explainability/SHAP_xgboost.py
+```
+
+Please cite: Lundberg & Lee, NeurIPS 2017, “A Unified Approach to Interpreting Model Predictions.”
 
 ---
 
@@ -93,16 +173,61 @@ cd Engineering-Fast-Li-Transport-in-Solid-State-Electrolytes
 conda create -n fastli python=3.11 -y
 conda activate fastli
 
-# 3) Install common Python deps (edit requirements.txt as your project evolves)
+# 3) Install common dependencies (edit as your project evolves)
 pip install -r requirements.txt
+# Typical: numpy pandas scikit-learn matplotlib ase pymatgen shap
+# For CGCNN: PyTorch (+ torch-geometric stack per CUDA/CPU)
+# For XGBoost: xgboost
+# For notebooks: jupyterlab / ipykernel
 
-# 4) Per-module setup (examples)
-# CGCNN: follow upstream instructions (PyTorch + dependencies), then:
-#   python 3_CGCNN/train.py --config configs/base.yaml
+# DFT/VASP: Use your institution’s licensed VASP 5.4.4 installation;
+# configure INCAR/KPOINTS/POTCAR and job scripts accordingly.
+```
 
-# XGBoost:
-pip install xgboost
-#   or: conda install -c conda-forge xgboost
+---
 
-# SISSO/SISSO++:
-#   Build from source per SISSO or SISSO++ docs (CMake + C++14/BLAS/LAPACK/MPI).
+## Reproducibility Checklist
+
+* Pin dependencies (`requirements.txt` or `environment.yml`).
+* Record exact data splits and preprocessing, plus random seeds.
+* Log model configs and checkpoint hashes.
+* Provide minimal runnable examples (each subfolder README).
+
+---
+
+## Data & Large Files
+
+* Keep small CSV/JSON/plots in-repo.
+* Track large binaries (e.g., structure archives, model weights) with **Git LFS**.
+* Publish versioned artifacts via **GitHub Releases** for easy access and citation.
+
+---
+
+## Citations
+
+**DFT / VASP methodology**
+
+* G. Kresse, J. Furthmüller, *Phys. Rev. B* 54, 11169–11186 (1996).
+* G. Kresse, D. Joubert, *Phys. Rev. B* 59, 1758–1775 (1999).
+
+**CGCNN**
+
+* T. Xie, J. C. Grossman, *Phys. Rev. Lett.* 120, 145301 (2018).
+
+**SISSO**
+
+* R. Ouyang, E. Ahmetcik, M. Scheffler, L. M. Ghiringhelli, *Phys. Rev. Materials* 2, 083802 (2018).
+
+**XGBoost**
+
+* T. Chen, C. Guestrin, KDD (2016). “XGBoost: A Scalable Tree Boosting System.”
+
+**Explainability (SHAP)**
+
+* S. M. Lundberg, S.-I. Lee, NeurIPS 2017. arXiv:1705.07874.
+
+---
+
+## License
+
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
