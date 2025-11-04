@@ -162,47 +162,6 @@ Please cite: Lundberg & Lee, NeurIPS 2017, “A Unified Approach to Interpreting
 
 ---
 
-## Quick Start
-
-```bash
-# 1) Clone
-git clone <REPO_URL>
-cd Engineering-Fast-Li-Transport-in-Solid-State-Electrolytes
-
-# 2) Create a clean environment (example with conda)
-conda create -n fastli python=3.11 -y
-conda activate fastli
-
-# 3) Install common dependencies (edit as your project evolves)
-pip install -r requirements.txt
-# Typical: numpy pandas scikit-learn matplotlib ase pymatgen shap
-# For CGCNN: PyTorch (+ torch-geometric stack per CUDA/CPU)
-# For XGBoost: xgboost
-# For notebooks: jupyterlab / ipykernel
-
-# DFT/VASP: Use your institution’s licensed VASP 5.4.4 installation;
-# configure INCAR/KPOINTS/POTCAR and job scripts accordingly.
-```
-
----
-
-## Reproducibility Checklist
-
-* Pin dependencies (`requirements.txt` or `environment.yml`).
-* Record exact data splits and preprocessing, plus random seeds.
-* Log model configs and checkpoint hashes.
-* Provide minimal runnable examples (each subfolder README).
-
----
-
-## Data & Large Files
-
-* Keep small CSV/JSON/plots in-repo.
-* Track large binaries (e.g., structure archives, model weights) with **Git LFS**.
-* Publish versioned artifacts via **GitHub Releases** for easy access and citation.
-
----
-
 ## Citations
 
 **DFT / VASP methodology**
